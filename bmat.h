@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 #include <utility>
+#include <stdexcept>
 #include <type_traits>
 
 namespace blib
@@ -67,7 +68,7 @@ namespace blib
     // friend bmatrix<T> &make_row( size_t len,  T *src);
     // friend bmatrix<T> &make_column( size_t len,  T *src);
     // Change the value of matrix
-    T &at(size_t row, size_t column); // Change one value of the matrix
+    T &at(size_t row, size_t column) const; // Change one value of the matrix
     // bmatrix<T> &operator=( bmatrix<T> &&);
     //  Basic Operators of Matrices
     friend bmatrix<T> operator* <>(bmatrix<T> &, bmatrix<T> &);
@@ -78,7 +79,7 @@ namespace blib
     bmatrix<double> rref();
     double norm(size_t);
     T det();
-    struct S get_size()
+    struct S get_size() const
     {
       return this->size;
     }
@@ -128,7 +129,7 @@ blib::bmatrix<T>::bmatrix(std::array<std::array<T, column>, row> &&src)
 }
 
 template <typename T>
-T &blib::bmatrix<T>::at(size_t row, size_t column)
+T &blib::bmatrix<T>::at(size_t row, size_t column) const
 {
   if (row < this->size.row && column < this->size.column)
   {
@@ -450,8 +451,6 @@ T blib::bmatrix<T>::det()
   }
 }
 
-#include <iostream>
-
 template <typename T>
 blib::bmatrix<T> blib::identity(size_t N)
 {
@@ -487,5 +486,95 @@ blib::bmatrix<T>::bmatrix(blib::bmatrix<P> &src)
   for (size_t i = 0; i < size.row; i++)
   {
     th[i].join();
+  }
+}
+
+template <typename T1, typename T2>
+auto operator+(const blib::bmatrix<T1> &a, const blib::bmatrix<T2> &b) -> blib::bmatrix<decltype(T1{} + T2{})>
+{
+  if (a.get_size().row == b.get_size().row && a.get_size().column == b.get_size().column)
+  {
+    using ResultType = decltype(T1{} + T2{});
+    auto res = blib::bmatrix<ResultType>(a.get_size().row, a.get_size().column);
+    auto th = std::make_unique<std::thread[]>(a.get_size().row);
+    for (size_t i = 0; i < a.get_size().row; i++)
+    {
+      th[i] = std::thread([&, i]()
+                          {
+                for (size_t j = 0; j < a.get_size().column; j++)
+                {
+                    res.at(i, j) = a.at(i, j) + b.at(i, j);
+                } });
+    }
+    for (size_t i = 0; i < a.get_size().row; i++)
+    {
+      th[i].join();
+    }
+    return res;
+  }
+  else
+  {
+    throw std::invalid_argument("Matrices must have the same dimensions for addition.");
+  }
+}
+template <typename T1, typename T2>
+auto operator-(const blib::bmatrix<T1> &a, const blib::bmatrix<T2> &b) -> blib::bmatrix<decltype(T1{} - T2{})>
+{
+  if (a.get_size().row == b.get_size().row && a.get_size().column == b.get_size().column)
+  {
+    using ResultType = decltype(T1{} - T2{});
+    auto res = blib::bmatrix<ResultType>(a.get_size().row, a.get_size().column);
+    auto th = std::make_unique<std::thread[]>(a.get_size().row);
+    for (size_t i = 0; i < a.get_size().row; i++)
+    {
+      th[i] = std::thread([&, i]()
+                          {
+                for (size_t j = 0; j < a.get_size().column; j++)
+                {
+                    res.at(i, j) = a.at(i, j) - b.at(i, j);
+                } });
+    }
+    for (size_t i = 0; i < a.get_size().row; i++)
+    {
+      th[i].join();
+    }
+    return res;
+  }
+  else
+  {
+    throw std::invalid_argument("Matrices must have the same dimensions for subtraction.");
+  }
+}
+template <typename T1, typename T2>
+auto operator*(const blib::bmatrix<T1> &a, const blib::bmatrix<T2> &b) -> blib::bmatrix<decltype(T1{} * T2{})>
+{
+  if (a.get_size().column == b.get_size().row)
+  {
+    using ResultType = decltype(T1{} * T2{});
+    auto res = blib::bmatrix<ResultType>(a.get_size().row, b.get_size().column);
+    auto th = std::make_unique<std::thread[]>(a.get_size().row);
+    for (size_t i = 0; i < a.get_size().row; i++)
+    {
+      th[i] = std::thread([&, i]()
+                          {
+                for (size_t j = 0; j < b.get_size().column; j++)
+                {
+                    ResultType sum = 0;
+                    for (size_t k = 0; k < a.get_size().column; k++)
+                    {
+                        sum += a.at(i, k) * b.at(k, j);
+                    }
+                    res.at(i, j) = sum;
+                } });
+    }
+    for (size_t i = 0; i < a.get_size().row; i++)
+    {
+      th[i].join();
+    }
+    return res;
+  }
+  else
+  {
+    throw std::invalid_argument("Number of columns in the first matrix must equal the number of rows in the second matrix for multiplication.");
   }
 }
