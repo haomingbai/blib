@@ -61,7 +61,8 @@ namespace blib
     bmatrix(size_t row, size_t column,
             std::initializer_list<std::initializer_list<T>>
                 &&); // Start from an initializer_list
-    template<typename P> bmatrix(bmatrix<P>&);
+    template <typename P>
+    bmatrix(bmatrix<P> &);
     // Friends about Construction
     // friend bmatrix<T> &make_row( size_t len,  T *src);
     // friend bmatrix<T> &make_column( size_t len,  T *src);
@@ -449,7 +450,7 @@ T blib::bmatrix<T>::det()
   }
 }
 
-#include<iostream>
+#include <iostream>
 
 template <typename T>
 blib::bmatrix<T> blib::identity(size_t N)
@@ -466,26 +467,25 @@ template <typename T>
 template <typename P>
 blib::bmatrix<T>::bmatrix(blib::bmatrix<P> &src)
 {
-    this->size.row = src.get_size().row;
-    this->size.column = src.get_size().column;
-    this->data_block = new T *[size.row];
-    for (size_t i = 0; i < size.row; i++)
-    {
-        data_block[i] = new T[size.column];
-    }
-    auto th = std::make_unique<std::thread[]>(size.row);
-    for (size_t i = 0; i < size.row; i++)
-    {
-        th[i] = std::thread([&, i]()
-        {
+  this->size.row = src.get_size().row;
+  this->size.column = src.get_size().column;
+  this->data_block = new T *[size.row];
+  for (size_t i = 0; i < size.row; i++)
+  {
+    data_block[i] = new T[size.column];
+  }
+  auto th = std::make_unique<std::thread[]>(size.row);
+  for (size_t i = 0; i < size.row; i++)
+  {
+    th[i] = std::thread([&, i]()
+                        {
             for (size_t j = 0; j < size.column; j++)
             {
                 this->at(i, j) = static_cast<T>(src.at(i, j));
-            }
-        });
-    }
-    for (size_t i = 0; i < size.row; i++)
-    {
-        th[i].join();
-    }
+            } });
+  }
+  for (size_t i = 0; i < size.row; i++)
+  {
+    th[i].join();
+  }
 }
