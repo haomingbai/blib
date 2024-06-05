@@ -16,11 +16,13 @@ namespace blib
   class bmatrix;
 
   template <typename T>
-  bmatrix<T> &operator*(bmatrix<T> &, bmatrix<T> &);
+  bmatrix<T> operator*(bmatrix<T> &, bmatrix<T> &);
   template <typename T>
-  bmatrix<T> &operator+(bmatrix<T> &, bmatrix<T> &);
+  bmatrix<T> operator+(bmatrix<T> &, bmatrix<T> &);
   template <typename T>
-  bmatrix<T> &operator-(bmatrix<T> &, bmatrix<T> &);
+  bmatrix<T> operator-(bmatrix<T> &, bmatrix<T> &);
+  template <typename T>
+  bmatrix<T> identity(size_t N);
   /*
    * Definition of Matrix
    * The Data Structure of Matrix
@@ -56,10 +58,10 @@ namespace blib
     template <size_t row_number, size_t column_number>
     bmatrix(std::array<std::array<T, column_number>,
                        row_number> &&); // Start from an array
-    bmatrix();                          // An empty matrix
     bmatrix(size_t row, size_t column,
             std::initializer_list<std::initializer_list<T>>
                 &&); // Start from an initializer_list
+    template<typename P> bmatrix(bmatrix<P>&);
     // Friends about Construction
     // friend bmatrix<T> &make_row( size_t len,  T *src);
     // friend bmatrix<T> &make_column( size_t len,  T *src);
@@ -67,18 +69,19 @@ namespace blib
     T &at(size_t row, size_t column); // Change one value of the matrix
     // bmatrix<T> &operator=( bmatrix<T> &&);
     //  Basic Operators of Matrices
-    friend bmatrix<T> &operator* <>(bmatrix<T> &, bmatrix<T> &);
-    friend bmatrix<T> &operator+ <>(bmatrix<T> &, bmatrix<T> &);
-    friend bmatrix<T> &operator- <>(bmatrix<T> &, bmatrix<T> &);
+    friend bmatrix<T> operator* <>(bmatrix<T> &, bmatrix<T> &);
+    friend bmatrix<T> operator+ <>(bmatrix<T> &, bmatrix<T> &);
+    friend bmatrix<T> operator- <>(bmatrix<T> &, bmatrix<T> &);
     // template<typename P> friend double operator/( bmatrix<P> &,  bmatrix<P> &);
     //  Functions
-    bmatrix<double> &rref();
+    bmatrix<double> rref();
     double norm(size_t);
     T det();
     struct S get_size()
     {
       return this->size;
     }
+    friend bmatrix<T> identity<>(size_t N);
   };
 } // namespace blib
 
@@ -144,7 +147,7 @@ T &blib::bmatrix<T>::at(size_t row, size_t column)
 }
 
 template <typename T>
-blib::bmatrix<T> &blib::operator*(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
+blib::bmatrix<T> blib::operator*(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
 {
   if (a.size.column == b.size.row)
   {
@@ -186,7 +189,7 @@ blib::bmatrix<T> &blib::operator*(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
     {
       th[i].join();
     }
-    return res;
+    return std::move(res);
   }
   else
   {
@@ -202,7 +205,7 @@ blib::bmatrix<T> &blib::operator*(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
 }
 
 template <typename T>
-blib::bmatrix<T> &blib::operator+(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
+blib::bmatrix<T> blib::operator+(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
 {
   if (a.size.row == b.size.row && a.size.column == b.size.column)
   {
@@ -227,7 +230,7 @@ blib::bmatrix<T> &blib::operator+(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
     {
       th[i].join();
     }
-    return res;
+    return std::move(res);
   }
   else
   {
@@ -243,7 +246,7 @@ blib::bmatrix<T> &blib::operator+(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
 }
 
 template <typename T>
-blib::bmatrix<T> &blib::operator-(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
+blib::bmatrix<T> blib::operator-(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
 {
   if (a.size.row == b.size.row && a.size.column == b.size.column)
   {
@@ -268,7 +271,7 @@ blib::bmatrix<T> &blib::operator-(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
     {
       th[i].join();
     }
-    return res;
+    return std::move(res);
   }
   else
   {
@@ -284,7 +287,7 @@ blib::bmatrix<T> &blib::operator-(blib::bmatrix<T> &a, blib::bmatrix<T> &b)
 }
 
 template <typename T>
-blib::bmatrix<double> &blib::bmatrix<T>::rref()
+blib::bmatrix<double> blib::bmatrix<T>::rref()
 {
   blib::bmatrix<double> &res = *new blib::bmatrix<double>(size.row, size.column);
 
@@ -356,7 +359,7 @@ blib::bmatrix<double> &blib::bmatrix<T>::rref()
     }
   }
 
-  return res;
+  return std::move(res);
 }
 
 template <typename T>
@@ -444,4 +447,45 @@ T blib::bmatrix<T>::det()
     } e;
     throw e;
   }
+}
+
+#include<iostream>
+
+template <typename T>
+blib::bmatrix<T> blib::identity(size_t N)
+{
+  auto &res = *new blib::bmatrix<T>(N, N);
+  for (int i = 0; i < N; i++)
+  {
+    res.at(i, i) = 1;
+  }
+  return std::move(res);
+}
+
+template <typename T>
+template <typename P>
+blib::bmatrix<T>::bmatrix(blib::bmatrix<P> &src)
+{
+    this->size.row = src.get_size().row;
+    this->size.column = src.get_size().column;
+    this->data_block = new T *[size.row];
+    for (size_t i = 0; i < size.row; i++)
+    {
+        data_block[i] = new T[size.column];
+    }
+    auto th = std::make_unique<std::thread[]>(size.row);
+    for (size_t i = 0; i < size.row; i++)
+    {
+        th[i] = std::thread([&, i]()
+        {
+            for (size_t j = 0; j < size.column; j++)
+            {
+                this->at(i, j) = static_cast<T>(src.at(i, j));
+            }
+        });
+    }
+    for (size_t i = 0; i < size.row; i++)
+    {
+        th[i].join();
+    }
 }
