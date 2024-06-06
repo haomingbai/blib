@@ -1,3 +1,4 @@
-test*
-*.out
-.vscode
+*
+!.h
+!.cpp
+test.cpp
