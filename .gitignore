@@ -1,4 +1,4 @@
 *
-!.h
-!.cpp
+!*.h
+!*.cpp
 test.cpp
