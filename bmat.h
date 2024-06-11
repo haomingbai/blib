@@ -1,3 +1,5 @@
+#pragma once
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -73,7 +75,7 @@ namespace blib
     friend bmatrix<T> identity<T>(size_t N);
   };
 
-  template<typename T>
+  template <typename T>
   bmatrix<T> identity(size_t N);
 } // namespace blib
 
@@ -85,4 +87,3 @@ auto operator-(const blib::bmatrix<T1> &a, const blib::bmatrix<T2> &b) -> blib::
 
 template <typename T1, typename T2>
 auto operator+(const blib::bmatrix<T1> &a, const blib::bmatrix<T2> &b) -> blib::bmatrix<decltype(T1{} + T2{})>;
-
