@@ -87,3 +87,5 @@ auto operator-(const blib::bmatrix<T1> &a, const blib::bmatrix<T2> &b) -> blib::
 
 template <typename T1, typename T2>
 auto operator+(const blib::bmatrix<T1> &a, const blib::bmatrix<T2> &b) -> blib::bmatrix<decltype(T1{} + T2{})>;
+
+#include "bmat.cpp"
